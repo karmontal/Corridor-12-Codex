@@ -77,16 +77,24 @@ func _build_ui() -> void:
 	layout.add_child(body)
 
 	var left := _panel(body, 282, "Dispatch")
-	_label(left, "DISPATCH", 20, TEXT)
-	day_label = _label(left, "", 14, ACCENT)
-	_separator(left)
+	if mobile_layout:
+		var dispatch_heading := HBoxContainer.new()
+		left.add_child(dispatch_heading)
+		_label(dispatch_heading, "DISPATCH", 20, TEXT)
+		day_label = _label(dispatch_heading, "", 14, ACCENT)
+		day_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		day_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	else:
+		_label(left, "DISPATCH", 20, TEXT)
+		day_label = _label(left, "", 14, ACCENT)
+		_separator(left)
 	var actions := left
 	if mobile_layout:
 		var dispatch_columns := HBoxContainer.new()
 		dispatch_columns.add_theme_constant_override("separation", 24)
 		left.add_child(dispatch_columns)
 		left = VBoxContainer.new()
-		left.add_theme_constant_override("separation", 10)
+		left.add_theme_constant_override("separation", 6)
 		left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		dispatch_columns.add_child(left)
 		actions = VBoxContainer.new()
@@ -133,7 +141,7 @@ func _build_ui() -> void:
 	middle.get_parent().size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	middle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_label(middle, "OPERATIONS MAP", 20, TEXT)
-	_label(middle, "Click a district to set the destination.", 13, MUTED)
+	_label(middle, "Tap a district to set the destination." if mobile_layout else "Click a district to set the destination.", 13, MUTED)
 	map_view = MapView.new()
 	if mobile_layout:
 		map_view.custom_minimum_size.y = 260
@@ -171,10 +179,11 @@ func _panel(parent: Container, width: float, tab_name: String) -> VBoxContainer:
 	style.border_color = Color("2c4d54")
 	style.set_border_width_all(1)
 	style.set_corner_radius_all(12)
-	style.content_margin_left = 17
-	style.content_margin_right = 17
-	style.content_margin_top = 17
-	style.content_margin_bottom = 17
+	var padding := 12 if mobile_layout else 17
+	style.content_margin_left = padding
+	style.content_margin_right = padding
+	style.content_margin_top = padding
+	style.content_margin_bottom = padding
 	panel.add_theme_stylebox_override("panel", style)
 	if mobile_layout:
 		var scroll := ScrollContainer.new()
@@ -187,7 +196,7 @@ func _panel(parent: Container, width: float, tab_name: String) -> VBoxContainer:
 	else:
 		parent.add_child(panel)
 	var column := VBoxContainer.new()
-	column.add_theme_constant_override("separation", 10)
+	column.add_theme_constant_override("separation", 6 if mobile_layout else 10)
 	panel.add_child(column)
 	return column
 
