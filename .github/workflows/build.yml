@@ -16,8 +16,21 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install verified Godot and export templates
         run: bash tools/setup-godot.sh
-      - name: Test and export Windows, Linux and Web
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Keep the Android development signing key for updates
+        uses: actions/cache@v4
+        with:
+          path: .tools/android-debug.keystore
+          key: corridor12-android-debug-v1
+      - name: Install Android export tools
+        run: bash tools/setup-android.sh
+      - name: Test and export Windows, Linux, Web and Android
         run: bash tools/build.sh
+        env:
+          BUILD_ANDROID: '1'
       - name: Upload playable builds
         uses: actions/upload-artifact@v4
         with:

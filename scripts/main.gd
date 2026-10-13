@@ -24,9 +24,16 @@ var map_view: Control
 var queue_button: Button
 var undo_button: Button
 var simulate_button: Button
+var mobile_layout := false
+var dispatch_feedback: Label
 
 func _ready() -> void:
-	get_window().min_size = Vector2i(980, 690)
+	mobile_layout = OS.has_feature("mobile") or DisplayServer.is_touchscreen_available()
+	if not mobile_layout:
+		get_window().min_size = Vector2i(980, 690)
+	else:
+		theme = Theme.new()
+		theme.default_font_size = 20
 	_build_ui()
 	_refresh()
 
@@ -52,7 +59,7 @@ func _build_ui() -> void:
 	brand.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(brand)
 	_label(brand, "CORRIDOR 12", 30, ACCENT)
-	_label(brand, "Plan aid convoys. Balance impact, equity and safety.", 14, MUTED)
+	_label(brand, "Plan aid convoys" if mobile_layout else "Plan aid convoys. Balance impact, equity and safety.", 14, MUTED)
 	var scenario_box := VBoxContainer.new()
 	header.add_child(scenario_box)
 	_label(scenario_box, "SCENARIO", 11, MUTED)
@@ -62,15 +69,31 @@ func _build_ui() -> void:
 	var restart := _button(header, "Restart", false)
 	restart.pressed.connect(_on_restart)
 
-	var body := HBoxContainer.new()
+	var body: Container = TabContainer.new() if mobile_layout else HBoxContainer.new()
+	if mobile_layout:
+		(body as TabContainer).get_tab_bar().custom_minimum_size.y = 48
 	body.add_theme_constant_override("separation", 14)
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	layout.add_child(body)
 
-	var left := _panel(body, 282)
+	var left := _panel(body, 282, "Dispatch")
 	_label(left, "DISPATCH", 20, TEXT)
 	day_label = _label(left, "", 14, ACCENT)
 	_separator(left)
+	var actions := left
+	if mobile_layout:
+		var dispatch_columns := HBoxContainer.new()
+		dispatch_columns.add_theme_constant_override("separation", 24)
+		left.add_child(dispatch_columns)
+		left = VBoxContainer.new()
+		left.add_theme_constant_override("separation", 10)
+		left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		dispatch_columns.add_child(left)
+		actions = VBoxContainer.new()
+		actions.add_theme_constant_override("separation", 12)
+		actions.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		dispatch_columns.add_child(actions)
+		_label(actions, "CONVOY PLAN", 20, TEXT)
 	_label(left, "DESTINATION", 11, MUTED)
 	district_picker = _picker(left, GameState.DISTRICTS)
 	district_picker.select(1)
@@ -84,6 +107,8 @@ func _build_ui() -> void:
 	amount_input.max_value = 60
 	amount_input.step = 5
 	amount_input.value = 40
+	if mobile_layout:
+		amount_input.custom_minimum_size.y = 48
 	amount_input.value_changed.connect(_on_amount_changed)
 	left.add_child(amount_input)
 	_label(left, "ROUTE PRIORITY", 11, MUTED)
@@ -91,29 +116,34 @@ func _build_ui() -> void:
 	route_picker.item_selected.connect(_on_plan_changed)
 	route_label = _label(left, "", 13, MUTED)
 	route_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	queue_button = _button(left, "Queue convoy", true)
+	if mobile_layout:
+		dispatch_feedback = _label(actions, "", 16, ACCENT)
+		dispatch_feedback.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	queue_button = _button(actions, "Queue convoy", true)
 	queue_button.pressed.connect(_on_queue)
-	undo_button = _button(left, "Undo last convoy", false)
+	undo_button = _button(actions, "Undo last convoy", false)
 	undo_button.pressed.connect(_on_undo)
 	var spacer := Control.new()
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	left.add_child(spacer)
-	simulate_button = _button(left, "SIMULATE DAY", true)
+	actions.add_child(spacer)
+	simulate_button = _button(actions, "SIMULATE DAY", true)
 	simulate_button.pressed.connect(_on_simulate)
 
-	var middle := _panel(body, 350)
+	var middle := _panel(body, 350, "Map")
 	middle.get_parent().size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	middle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_label(middle, "OPERATIONS MAP", 20, TEXT)
 	_label(middle, "Click a district to set the destination.", 13, MUTED)
 	map_view = MapView.new()
+	if mobile_layout:
+		map_view.custom_minimum_size.y = 260
 	map_view.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	map_view.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	map_view.district_selected.connect(_on_map_selected)
 	middle.add_child(map_view)
 	_label(middle, "Green: low risk | Amber: medium | Red: high | Mint: queued", 12, MUTED)
 
-	var right := _panel(body, 290)
+	var right := _panel(body, 290, "Situation")
 	_label(right, "SITUATION", 20, TEXT)
 	stock_label = _label(right, "", 13, TEXT)
 	fuel_label = _label(right, "", 13, TEXT)
@@ -133,9 +163,9 @@ func _build_ui() -> void:
 	log_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_label(layout, "Prototype • 3 days • 2 convoys per day • click Restart to try another plan", 12, MUTED)
 
-func _panel(parent: Container, width: float) -> VBoxContainer:
+func _panel(parent: Container, width: float, tab_name: String) -> VBoxContainer:
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size.x = width
+	panel.custom_minimum_size.x = 0 if mobile_layout else width
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color("142a34")
 	style.border_color = Color("2c4d54")
@@ -146,7 +176,16 @@ func _panel(parent: Container, width: float) -> VBoxContainer:
 	style.content_margin_top = 17
 	style.content_margin_bottom = 17
 	panel.add_theme_stylebox_override("panel", style)
-	parent.add_child(panel)
+	if mobile_layout:
+		var scroll := ScrollContainer.new()
+		scroll.name = tab_name
+		scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		parent.add_child(scroll)
+		scroll.add_child(panel)
+		panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	else:
+		parent.add_child(panel)
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", 10)
 	panel.add_child(column)
@@ -155,13 +194,15 @@ func _panel(parent: Container, width: float) -> VBoxContainer:
 func _label(parent: Container, value: String, font_size: int, color: Color) -> Label:
 	var label := Label.new()
 	label.text = value
-	label.add_theme_font_size_override("font_size", font_size)
+	label.add_theme_font_size_override("font_size", maxi(16, font_size + 2) if mobile_layout else font_size)
 	label.add_theme_color_override("font_color", color)
 	parent.add_child(label)
 	return label
 
 func _picker(parent: Container, options: Array) -> OptionButton:
 	var picker := OptionButton.new()
+	if mobile_layout:
+		picker.custom_minimum_size.y = 48
 	for option in options:
 		picker.add_item(option)
 	parent.add_child(picker)
@@ -170,7 +211,7 @@ func _picker(parent: Container, options: Array) -> OptionButton:
 func _button(parent: Container, value: String, primary: bool) -> Button:
 	var button := Button.new()
 	button.text = value
-	button.custom_minimum_size.y = 42
+	button.custom_minimum_size.y = 56 if mobile_layout else 42
 	var normal := StyleBoxFlat.new()
 	normal.bg_color = Color("258674") if primary else Color("26414c")
 	normal.set_corner_radius_all(8)
@@ -187,6 +228,8 @@ func _separator(parent: Container) -> void:
 	parent.add_child(rule)
 
 func _refresh() -> void:
+	if dispatch_feedback != null:
+		dispatch_feedback.text = "%d / 2 convoys queued\n%s" % [game.plans.size(), "\n".join(game.log_lines)]
 	day_label.text = "DAY %d / 3   •   %s" % [mini(game.day, 3), "Complete" if game.day > 3 else "Planning"]
 	stock_label.text = "Depot stock\nFood  %d     Medicine  %d\nShelter  %d" % [game.stock["Food"], game.stock["Medicine"], game.stock["Shelter"]]
 	fuel_label.text = "Fuel available  %d" % game.fuel

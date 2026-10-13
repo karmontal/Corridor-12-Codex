@@ -69,3 +69,7 @@ for target, name in names.items():
     print(f'Built {output} ({output.stat().st_size:,} bytes)')
 (build / 'packages' / 'SHA256SUMS.txt').write_text('\n'.join(checksums) + '\n')
 PY
+
+if [[ "${BUILD_ANDROID:-0}" == 1 ]]; then
+    bash tools/build-android.sh
+fi

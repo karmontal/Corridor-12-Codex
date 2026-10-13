@@ -13,7 +13,8 @@ var state: GameState
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	custom_minimum_size = Vector2(350, 350)
+	if custom_minimum_size == Vector2.ZERO:
+		custom_minimum_size = Vector2(350, 350)
 	resized.connect(queue_redraw)
 
 func set_display(game: GameState, district: String) -> void:

@@ -39,10 +39,10 @@ with ZipFile(root / 'downloads' / f'Godot_v{version}-stable_linux.x86_64.zip') a
 destination = root / 'data' / 'godot' / 'export_templates' / f'{version}.stable'
 destination.mkdir(parents=True, exist_ok=True)
 templates = ['version.txt', 'linux_release.x86_64', 'windows_release_x86_64.exe',
-             'windows_release_x86_64_console.exe', 'web_nothreads_release.zip']
+             'windows_release_x86_64_console.exe', 'web_nothreads_release.zip', 'android_debug.apk']
 with ZipFile(root / 'downloads' / f'Godot_v{version}-stable_export_templates.tpz') as archive:
     for name in templates:
         (destination / name).write_bytes(archive.read(f'templates/{name}'))
-print(f'Installed Godot {version} and Windows, Linux, single-threaded Web release templates.')
+print(f'Installed Godot {version} and Windows, Linux, Web and Android development templates.')
 PY
 "$tool_root/bin/godot" --headless --version
