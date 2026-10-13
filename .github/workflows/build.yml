@@ -1,0 +1,27 @@
+name: Build playable prototype
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install verified Godot and export templates
+        run: bash tools/setup-godot.sh
+      - name: Test and export Windows, Linux and Web
+        run: bash tools/build.sh
+      - name: Upload playable builds
+        uses: actions/upload-artifact@v4
+        with:
+          name: Corridor12-playable-builds
+          path: build/packages/*
+          if-no-files-found: error
+          retention-days: 30

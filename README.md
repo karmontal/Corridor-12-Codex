@@ -124,3 +124,32 @@ A* over graph; weights configurable; heuristic = time estimate to goal.
 # Databases
 
 corridor12_backlog
+
+## Playable prototype
+
+The repository now includes a Godot 4 prototype. Open `project.godot` in Godot 4.3 or later and press **F6** on `scenes/main.tscn`, or press **F5** to run the project. Choose a district on the map, set cargo and route priority, queue up to two convoys, then simulate the day. The prototype covers three days and offers standard, checkpoint delay, and fuel shortage scenarios.
+
+The map uses shapes drawn in Godot. Higgsfield images and Tripo models can be added later without blocking playtesting of the planning loop.
+
+For a headless gameplay smoke check, run `godot --headless --path . --script res://tests/smoke.gd` from the repository root.
+
+## Download a build
+
+The [Build playable prototype workflow](https://github.com/karmontal/Corridor-12-Codex/actions/workflows/build.yml) tests and exports the game after each push to `main`. Open a completed successful run and download its `Corridor12-playable-builds` artifact. GitHub requires you to be signed in to download workflow artifacts; they are kept for 30 days.
+
+- **Windows:** extract `Corridor12-Windows-x64.zip` and run `Corridor12.exe`. You do not need to install Godot.
+- **Linux:** extract `Corridor12-Linux-x64.zip`, make `Corridor12.x86_64` executable, and run it.
+- **Web:** extract `Corridor12-Web.zip`, serve the folder with `python3 -m http.server 8000`, and open `http://localhost:8000` in a WebGL2-capable browser. Opening the HTML directly as a file will not work. This build does not require cross-origin isolation headers.
+
+## Reproduce the build
+
+On Linux, with Bash, curl, Python 3, sha512sum, and ripgrep installed, run:
+
+```bash
+bash tools/setup-godot.sh
+bash tools/build.sh
+```
+
+The setup script pins Godot **4.6.3** and checks the official engine and template archive SHA-512 hashes before installation. Downloads and tool state stay in the ignored `.tools/` directory. The build script imports the project, runs the gameplay smoke checks, exports all three targets, checks that the exported Linux executable starts, and creates ZIP packages with SHA-256 checksums in `build/packages/`. Outputs are ignored by Git.
+
+The Windows build is unsigned. Godot engine license information is included in each package.
